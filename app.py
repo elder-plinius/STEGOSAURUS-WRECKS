@@ -52,10 +52,10 @@ def main():
         encode_text_into_image(image_path, master_plan, output_image_path)
         
         st.success("Master plan encoded into image successfully.")
-        st.image(output_image_path, caption="Encoded Image with Master Plan", use_column_width=True)
+        st.image(output_image_path, caption="MUST CLICK HYPERLINK TO DOWNLOAD PROPERLY", use_column_width=True)
         st.markdown(get_image_download_link(output_image_path), unsafe_allow_html=True)
         st.balloons()
-        st.success("Process completed. Download the generated encoded image.")
+        st.success("Process completed. Click to download the generated encoded image.")
 
 if __name__ == "__main__":
     main()
