@@ -41,7 +41,7 @@ def main():
     else:
         default_image_path = "stegg.png"  # Path to your default stock image
         image_path = default_image_path
-        st.image(image_path, caption="For the image to work properly you must click Encode Text first, then download from the link", use_column_width=True)
+        st.image(image_path, caption="For the image to work properly you must click Encode Text first, then download from the generated link", use_column_width=True)
     
     user_text = st.text_area("Enter the text to encode into the image:", "")
     if st.button("Encode Text"):
