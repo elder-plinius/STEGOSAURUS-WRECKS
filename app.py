@@ -43,7 +43,7 @@ def main():
         image_path = default_image_path
         st.image(image_path, caption="For the image to work properly you must click Encode Text first, then download from the generated link", use_column_width=True)
     
-    user_text = st.text_area("Enter the text to encode into the image:", "")
+    user_text = st.text_area("Enter text to encode into the image:", "")
     if st.button("Encode Text"):
         st.info("Proceeding to encode text into the image.")
         
