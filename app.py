@@ -31,7 +31,7 @@ def get_image_download_link(img_path):
     return href
 
 def main():
-    st.title("STEGOSAURUS WRECKS - Image-Based Prompt Injection Generator")
+    st.title("STEGOSAURUS WRECKS         Image-Based Prompt Injection Generator")
     
     st.info("You can use the default stock image or upload your own image.")
     uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"])
