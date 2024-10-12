@@ -19,12 +19,12 @@ def encode_text_into_image(image_path, text, output_path):
     img = Image.open(image_path)
     img = img.convert("RGBA")  # Ensure image has alpha channel
 
-    # Convert text to binary, ensure it fits in the image
+    # Convert text to binary, make sure it fits in the image
     binary_text = ''.join(format(ord(char), '08b') for char in text) + '00000000'  # Add terminator
     width, height = img.size
     pixel_capacity = width * height * 3  # Capacity based on RGB channels
 
-    # Ensure the binary message fits within the pixel capacity
+    # Ensure the binary message fits
     if len(binary_text) > pixel_capacity:
         raise ValueError("The message is too long for this image.")
 
@@ -40,7 +40,7 @@ def encode_text_into_image(image_path, text, output_path):
                 b = (b & 0xFE) | int(binary_text[(index + 2) % len(binary_text)])  # LSB of blue
 
                 img.putpixel((x, y), (r, g, b, a))
-                index += 3  # Move to the next set of 3 bits
+                index += 3  # Move to the next set of bits
 
     # Save the encoded image before any compression
     img.save(output_path, optimize=True, format="PNG")
