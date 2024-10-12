@@ -19,40 +19,38 @@ def encode_text_into_image(image_path, text, output_path):
     img = Image.open(image_path)
     img = img.convert("RGBA")  # Ensure image has alpha channel
 
-    # Convert text to binary and repeat the text to improve robustness
+    # Convert text to binary and add redundancy
     binary_text = ''.join(format(ord(char), '08b') for char in text) + '00000000'  # Add terminator
-    repeated_binary_text = binary_text * 10  # Embed the message 10 times for redundancy
+    repeated_binary_text = binary_text * 10  # Repeat message for redundancy
 
     width, height = img.size
-    pixel_count = width * height
-
-    # Ensure the message can fit in the image
-    if len(repeated_binary_text) > pixel_count * 3:  # 3 bits per pixel (R, G, B)
-        raise ValueError("Message is too long to fit in this image.")
-
     index = 0
-    # Embed the message in the least significant bits of R, G, B channels
+
+    # Embed the binary text in the least significant bits of R, G, B channels
     for y in range(height):
         for x in range(width):
             if index < len(repeated_binary_text):
                 r, g, b, a = img.getpixel((x, y))
                 
-                # Modify the LSB of R, G, and B with the message bits
-                r = (r & 0xFE) | int(repeated_binary_text[index])
-                g = (g & 0xFE) | int(repeated_binary_text[(index + 1) % len(repeated_binary_text)])
-                b = (b & 0xFE) | int(repeated_binary_text[(index + 2) % len(repeated_binary_text)])
+                # Embed the binary data in the least significant bits of the RGB channels
+                r = (r & 0xFE) | int(repeated_binary_text[index])  # LSB of red
+                g = (g & 0xFE) | int(repeated_binary_text[(index + 1) % len(repeated_binary_text)])  # LSB of green
+                b = (b & 0xFE) | int(repeated_binary_text[(index + 2) % len(repeated_binary_text)])  # LSB of blue
                 
                 img.putpixel((x, y), (r, g, b, a))
-                index += 3  # Move to the next set of 3 bits (R, G, B)
+                index += 3  # Move to the next set of bits
 
-    # Save the encoded image and ensure it is within Twitter's size limit by compressing
+    # Save the image after encoding
     img.save(output_path, optimize=True, format="PNG")
 
-    # Compress the image if it's still too large
-    while os.path.getsize(output_path) > 900 * 1024:  # File size over 900 KB
-        img = img.resize((width // 2, height // 2))
-        img.save(output_path, optimize=True, format="PNG")
-        width, height = img.size  # Update the dimensions for potential further resizing
+def compress_image_if_needed(output_image_path):
+    """
+    Compress the image if it exceeds 900 KB. This should happen after encoding.
+    """
+    while os.path.getsize(output_image_path) > 900 * 1024:  # Check if file is over 900 KB
+        img = Image.open(output_image_path)
+        img = img.resize((img.width // 2, img.height // 2))  # Resize by 50%
+        img.save(output_image_path, optimize=True, format="PNG")  # Save again
 
 def get_image_download_link(img_path):
     with open(img_path, "rb") as f:
@@ -104,8 +102,13 @@ def main():
                 image_path = convert_to_png(image_path)
 
             output_image_path = f"encoded_{os.path.basename(image_path)}"
+            
+            # Step 1: Encode text into the image
             encode_text_into_image(image_path, final_text_to_encode, output_image_path)
             
+            # Step 2: Compress the image if needed
+            compress_image_if_needed(output_image_path)
+
             st.success(f"Master plan encoded into {os.path.basename(image_path)} successfully.")
             st.image(output_image_path, caption="MUST CLICK HYPERLINK TO DOWNLOAD PROPERLY", use_column_width=True)
             st.markdown(get_image_download_link(output_image_path), unsafe_allow_html=True)
