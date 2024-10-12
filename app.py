@@ -5,29 +5,33 @@ from PIL import Image
 
 def encode_text_into_image(image_path, text, output_path):
     img = Image.open(image_path)
-    img = img.convert("RGBA")  # Ensure image has an alpha channel
+    img = img.convert("RGBA")  # Ensure image has alpha channel
 
-    # Convert text to binary and add redundancy by repeating the message multiple times
-    binary_text = ''.join(format(ord(char), '08b') for char in text) + '00000000'  # Terminator
-    repeated_binary_text = binary_text * 5  # Repeat the binary text 5 times for redundancy
+    # Convert text to binary
+    binary_text = ''.join(format(ord(char), '08b') for char in text) + '00000000'  # Add terminator
+    repeated_binary_text = binary_text * 10  # Increase redundancy by repeating the message 10 times
 
     width, height = img.size
-    index = 0
+    pixel_count = width * height
 
-    # Embed the binary text across the RGB and Alpha channels for redundancy
+    # Ensure the message can fit in the image
+    if len(repeated_binary_text) > pixel_count * 3:  # 3 bits per pixel (R, G, B)
+        raise ValueError("Message is too long to fit in this image.")
+
+    index = 0
+    # Embed the message in the least significant bits of R, G, B channels
     for y in range(height):
         for x in range(width):
             if index < len(repeated_binary_text):
                 r, g, b, a = img.getpixel((x, y))
-
-                # Modify the least significant bits of R, G, B, and A channels for redundancy
+                
+                # Modify the LSB of R, G, and B with the message bits
                 r = (r & 0xFE) | int(repeated_binary_text[index])
                 g = (g & 0xFE) | int(repeated_binary_text[(index + 1) % len(repeated_binary_text)])
                 b = (b & 0xFE) | int(repeated_binary_text[(index + 2) % len(repeated_binary_text)])
-                a = (a & 0xFE) | int(repeated_binary_text[(index + 3) % len(repeated_binary_text)])
-
+                
                 img.putpixel((x, y), (r, g, b, a))
-                index += 4  # Move to the next 4 bits (one for each channel)
+                index += 3  # Move to the next set of 3 bits (R, G, B)
 
     # Save the encoded image and ensure it is within Twitter's size limit by compressing
     img.save(output_path, optimize=True, format="PNG")
