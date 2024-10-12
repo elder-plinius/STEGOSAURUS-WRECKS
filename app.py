@@ -3,6 +3,18 @@ import streamlit as st
 import base64
 from PIL import Image
 
+def convert_to_png(image_path):
+    """
+    Convert the image to PNG format if it's not already in PNG.
+    Returns the path to the new PNG image.
+    """
+    img = Image.open(image_path)
+    if img.format != 'PNG':
+        new_image_path = os.path.splitext(image_path)[0] + '.png'
+        img.save(new_image_path, 'PNG')  # Convert to PNG
+        return new_image_path
+    return image_path
+
 def encode_text_into_image(image_path, text, output_path):
     img = Image.open(image_path)
     img = img.convert("RGBA")  # Ensure image has alpha channel
@@ -83,10 +95,14 @@ def main():
             if uploaded_file == "stegg.png":
                 image_path = default_image_path
             else:
+                # Save the uploaded file to a temporary path
                 image_path = uploaded_file.name
                 with open(image_path, "wb") as f:
                     f.write(uploaded_file.getbuffer())
-                
+
+                # Convert the image to PNG if it isn't already
+                image_path = convert_to_png(image_path)
+
             output_image_path = f"encoded_{os.path.basename(image_path)}"
             encode_text_into_image(image_path, final_text_to_encode, output_image_path)
             
