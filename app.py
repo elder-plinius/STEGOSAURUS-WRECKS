@@ -19,28 +19,30 @@ def encode_text_into_image(image_path, text, output_path):
     img = Image.open(image_path)
     img = img.convert("RGBA")  # Ensure image has alpha channel
 
-    # Convert text to binary and add redundancy
+    # Convert text to binary, make sure it fits into the image, and apply controlled redundancy
     binary_text = ''.join(format(ord(char), '08b') for char in text) + '00000000'  # Add terminator
-    repeated_binary_text = binary_text * 10  # Repeat message for redundancy
-
     width, height = img.size
-    index = 0
+    pixel_capacity = width * height * 3  # Capacity based on RGB channels
 
-    # Embed the binary text in the least significant bits of R, G, B channels
+    # Ensure the binary message fits
+    if len(binary_text) > pixel_capacity:
+        raise ValueError("The message is too long for this image.")
+
+    index = 0
     for y in range(height):
         for x in range(width):
-            if index < len(repeated_binary_text):
+            if index < len(binary_text):
                 r, g, b, a = img.getpixel((x, y))
-                
-                # Embed the binary data in the least significant bits of the RGB channels
-                r = (r & 0xFE) | int(repeated_binary_text[index])  # LSB of red
-                g = (g & 0xFE) | int(repeated_binary_text[(index + 1) % len(repeated_binary_text)])  # LSB of green
-                b = (b & 0xFE) | int(repeated_binary_text[(index + 2) % len(repeated_binary_text)])  # LSB of blue
-                
+
+                # Modify the least significant bits of R, G, B channels
+                r = (r & 0xFE) | int(binary_text[index])
+                g = (g & 0xFE) | int(binary_text[(index + 1) % len(binary_text)])
+                b = (b & 0xFE) | int(binary_text[(index + 2) % len(binary_text)])
+
                 img.putpixel((x, y), (r, g, b, a))
                 index += 3  # Move to the next set of bits
 
-    # Save the image after encoding
+    # Save the encoded image
     img.save(output_path, optimize=True, format="PNG")
 
 def compress_image_if_needed(output_image_path):
