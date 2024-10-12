@@ -19,9 +19,9 @@ def encode_text_into_image(image_path, text, output_path):
     img = Image.open(image_path)
     img = img.convert("RGBA")  # Ensure image has alpha channel
 
-    # Convert text to binary
+    # Convert text to binary and repeat the text to improve robustness
     binary_text = ''.join(format(ord(char), '08b') for char in text) + '00000000'  # Add terminator
-    repeated_binary_text = binary_text * 10  # Increase redundancy by repeating the message 10 times
+    repeated_binary_text = binary_text * 10  # Embed the message 10 times for redundancy
 
     width, height = img.size
     pixel_count = width * height
