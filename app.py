@@ -109,8 +109,8 @@ def get_image_download_link(img_path):
 
 def main():
     st.title("STEGOSAURUS WRECKS")
-
-    st.info("You can use the default stock image or upload your own image.")
+    
+    st.info("You can either embed text or zlib-compressed files into an image.")
     uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"])
     
     if uploaded_file is not None:
@@ -118,20 +118,27 @@ def main():
     else:
         default_image_path = "stegg.png"  # Path to your default stock image
         image_path = default_image_path
-        st.image(image_path, caption="For the image to work properly you must click Encode Text first, then download from the generated link", use_column_width=True)
+        st.image(image_path, caption="For the image to work properly, click Encode Text first, then download from the link", use_column_width=True)
     
-    # Allow the user to choose between embedding text or a zlib-compressed file
-    option = st.radio("What do you want to embed?", ("Text", "Zlib Compressed File"))
+    st.markdown("---")
     
+    # Embedding options
+    option = st.radio("Select what you want to embed:", ["Text", "Zlib Compressed File"], help="Choose between embedding text or a compressed binary file into the image.")
+    
+    # Conditional UI based on the selection
     if option == "Text":
-        master_plan = st.text_area("Enter text to encode into the image:", "")
-        encoding_plane = st.selectbox("Select the plane to embed the text:", ["RGB", "R", "G", "B", "A"])
+        st.subheader("Text Embedding Options")
+        master_plan = st.text_area("Enter text to encode into the image:", "", help="Enter the text you want to hide in the image.")
+        encoding_plane = st.selectbox("Select the color plane for embedding text:", ["RGB", "R", "G", "B", "A"], help="Choose which color channels to use for embedding.")
     else:
-        uploaded_file_zlib = st.file_uploader("Upload a file to embed (it will be zlib compressed):", type=None)
-        encoding_plane = st.selectbox("Select the plane to embed the compressed file:", ["RGB", "R", "G", "B", "A"])
+        st.subheader("Zlib File Embedding Options")
+        uploaded_file_zlib = st.file_uploader("Upload a file to embed (it will be zlib compressed):", type=None, help="Upload a file that will be compressed and hidden in the image.")
+        encoding_plane = st.selectbox("Select the color plane for embedding compressed file:", ["RGB", "R", "G", "B", "A"], help="Choose which color channels to use for embedding.")
+
+    st.markdown("---")
 
     if st.button("Encode and Download"):
-        st.info("Proceeding to encode data into the image.")
+        st.info("Processing...")
 
         # Set the output file path with the specific name
         output_image_path = "mystical_image_with_planes_and_zlib.png"
@@ -143,16 +150,16 @@ def main():
         if option == "Text" and master_plan:
             image = Image.open(output_image_path)
             encode_text_into_plane(image, master_plan, output_image_path, encoding_plane)
-            st.success(f"Text encoded into {encoding_plane} plane successfully.")
+            st.success(f"Text successfully encoded into the {encoding_plane} plane.")
         
         # If embedding zlib file
         elif option == "Zlib Compressed File" and uploaded_file_zlib:
             file_data = uploaded_file_zlib.read()
             image = Image.open(output_image_path)
             encode_zlib_into_image(image, file_data, output_image_path, encoding_plane)
-            st.success(f"Zlib compressed file encoded into {encoding_plane} plane successfully.")
+            st.success(f"Zlib compressed file successfully encoded into the {encoding_plane} plane.")
         
-        st.image(output_image_path, caption="MUST CLICK HYPERLINK TO DOWNLOAD PROPERLY", use_column_width=True)
+        st.image(output_image_path, caption="Click the link below to download the encoded image.", use_column_width=True)
         st.markdown(get_image_download_link(output_image_path), unsafe_allow_html=True)
 
 if __name__ == "__main__":
