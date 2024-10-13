@@ -38,21 +38,28 @@ def calculate_capacity(img, channels):
     capacity_per_channel = width * height  # Each pixel in a channel can hold 1 bit
     return capacity_per_channel * len(channels)  # Total capacity based on the number of channels used
 
+def compress_text(text):
+    """
+    Compress the input text using zlib.
+    """
+    compressed_text = zlib.compress(text.encode())
+    return compressed_text
+
 def encode_text_into_plane(image, text, output_path, plane="RGB"):
     """
-    Embed the text into a specific color plane (R, G, B, A).
+    Embed the text into a specific color plane (R, G, B, A) using all available channels.
     """
     img = image.convert("RGBA")  # Ensure image has alpha channel
-    width, height = img.size
-    binary_text = ''.join(format(ord(char), '08b') for char in text) + '00000000'  # Add terminator
+    compressed_text = compress_text(text)
+    binary_text = ''.join(format(byte, '08b') for byte in compressed_text) + '00000000'  # Add terminator
     pixel_capacity = calculate_capacity(img, plane)
 
     if len(binary_text) > pixel_capacity:
         raise ValueError(f"The message is too long for this image. Available capacity: {pixel_capacity} bits, but you need {len(binary_text)} bits.")
 
     index = 0
-    for y in range(height):
-        for x in range(width):
+    for y in range(img.height):
+        for x in range(img.width):
             if index < len(binary_text):
                 r, g, b, a = img.getpixel((x, y))
 
@@ -67,40 +74,7 @@ def encode_text_into_plane(image, text, output_path, plane="RGB"):
                     a = (a & 0xFE) | int(binary_text[index + 3])  # LSB of alpha
 
                 img.putpixel((x, y), (r, g, b, a))
-                index += len(plane)  # Increment based on how many planes were used
-
-    img.save(output_path, format="PNG")
-
-def encode_zlib_into_image(image, file_data, output_path, plane="RGB"):
-    """
-    Embed zlib-compressed binary data into a specific color plane (R, G, B, A).
-    """
-    compressed_data = zlib.compress(file_data)
-    binary_data = ''.join(format(byte, '08b') for byte in compressed_data) + '00000000'  # Add terminator
-    pixel_capacity = calculate_capacity(image, plane)
-
-    if len(binary_data) > pixel_capacity:
-        raise ValueError(f"The compressed data is too long for this image. Available capacity: {pixel_capacity} bits, but you need {len(binary_data)} bits.")
-
-    img = image.convert("RGBA")  # Ensure image has alpha channel
-    index = 0
-    for y in range(img.height):
-        for x in range(img.width):
-            if index < len(binary_data):
-                r, g, b, a = img.getpixel((x, y))
-
-                # Embed into selected plane(s)
-                if 'R' in plane:
-                    r = (r & 0xFE) | int(binary_data[index])  # LSB of red
-                if 'G' in plane and index + 1 < len(binary_data):
-                    g = (g & 0xFE) | int(binary_data[index + 1])  # LSB of green
-                if 'B' in plane and index + 2 < len(binary_data):
-                    b = (b & 0xFE) | int(binary_data[index + 2])  # LSB of blue
-                if 'A' in plane and index + 3 < len(binary_data):
-                    a = (a & 0xFE) | int(binary_data[index + 3])  # LSB of alpha
-
-                img.putpixel((x, y), (r, g, b, a))
-                index += len(plane)
+                index += len(plane)  # Move to the next set of bits based on how many planes are used
 
     img.save(output_path, format="PNG")
 
