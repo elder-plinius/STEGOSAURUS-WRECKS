@@ -140,12 +140,12 @@ def main():
     
     # Conditional UI based on the selection
     if option == "Text":
-        st.subheader("Text Embedding Options")
+        st.subheader("Text Embedding")
         if not enable_jailbreak:
             master_plan = st.text_area("Enter text to encode into the image:", "", help="Enter the text you want to hide in the image.")
         encoding_plane = st.selectbox("Select the color plane for embedding text:", ["RGB", "R", "G", "B", "A"], help="Choose which color channels to use for embedding.")
     else:
-        st.subheader("Zlib File Embedding Options")
+        st.subheader("Zlib File Embedding")
         uploaded_file_zlib = st.file_uploader("Upload a file to embed (it will be zlib compressed):", type=None, help="Upload a file that will be compressed and hidden in the image.")
         encoding_plane = st.selectbox("Select the color plane for embedding compressed file:", ["RGB", "R", "G", "B", "A"], help="Choose which color channels to use for embedding.")
 
