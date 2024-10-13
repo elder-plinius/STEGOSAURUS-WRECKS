@@ -117,7 +117,7 @@ def main():
     else:
         default_image_path = "stegg.png"  # Path to your default stock image
         image_path = default_image_path
-        st.image(image_path, caption="For the image to work properly, click Encode Text first, then download from the link", use_column_width=True)
+        st.image(image_path, caption=".-.-.-.-<={LOVE PLINY}=>-.-.-.-.", use_column_width=True)
     
     st.markdown("---")
     
