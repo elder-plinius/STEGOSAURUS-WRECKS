@@ -44,9 +44,9 @@ def compress_text(text):
     compressed_text = zlib.compress(text.encode())
     return compressed_text
 
-def encode_text_into_rgb(image, text, output_path):
+def encode_text_into_image(image, text, output_path):
     """
-    Embed the text into RGB channels of the image.
+    Embed the text into the image's RGB channels.
     """
     img = image.convert("RGB")  # Ensure image uses only RGB channels
     compressed_text = compress_text(text)
@@ -87,7 +87,7 @@ def get_image_download_link(img_path):
 def main():
     st.title("STEGOSAURUS WRECKS")
 
-    st.info("🦕S̷̛̤̼̥̹͚͈̓̽̂E̴̳̘͕͍̯̮͖̖͚͋̋͠Ȩ̶͕̪͈̋ͅḎ̴̮͙̯̅̿̈́͐̏ ̷̳̗̟͕͐͂͒̉̑̕T̶̡͖͕̬̺̪̼̂̋̎̾̓͠ͅḪ̷̼͈̝̯̉͆̓̔̒̿̀̈́E̷̝̰͔̺͛̋͌̂̚ ̴̡̡̳̭̹͐̉̈̑F̵̫̜͆́̄͆͑̍́͆͠U̶̪̖̖̻̫͙̓̆̓͜T̵̛͔̭͈̙̙̠̜̤̠̓́́̈̕̕Ȕ̵̜͎̘̞̯͍̦̫͖̆Ŗ̶͍͓̤̪͍̦͔͙̿Ȩ̵͈̹̬͓̝̮̟̎̓͒̀̈́🔮")
+    st.info("🦕S̷̛̤̼̥̹͚͈̓̽̂E̴̳̘͕͍̯̮͖̖͚͋̋͠Ȩ̶͕̪͈̋ͅḎ̴̮͙̯̅̿̈́͐̏ ̷̳̗̟͕͐͂͒̉̑̕T̶̡͖͕̬̺̪̼̂̋̎̾̓͠ͅḪ̷̼͈̝̯̉͆̓̔̒̿̀̈́̈́E̷̝̰͔̺͛̋͌̂̚ ̴̡̡̳̭̹͐̉̈̑F̵̫̜͆́̄͆͑̍́͆͠U̶̪̖̖̻̫͙̓̆̓͜T̵̛͔̭͈̙̙̠̜̤̠̓́́̈̕̕Ȕ̵̜͎̘̞̯͍̦̫͖̆Ŗ̶͍͓̤̪͍̦͔͙̿Ȩ̵͈̹̬͓̝̮̟̎̓͒̀̈́🔮")
     uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"])
     
     if uploaded_file is not None:
@@ -142,14 +142,14 @@ def main():
         # If embedding text
         if option == "Text" and master_plan:
             image = Image.open(output_image_path)
-            encode_text_into_rgb(image, master_plan, output_image_path)
+            encode_text_into_image(image, master_plan, output_image_path)
             st.success(f"Text successfully encoded into the RGB channels.")
         
         # If embedding zlib file
         elif option == "Zlib Compressed File" and uploaded_file_zlib:
             file_data = uploaded_file_zlib.read()
             image = Image.open(output_image_path)
-            encode_text_into_rgb(image, file_data.decode(), output_image_path)
+            encode_text_into_image(image, file_data.decode(), output_image_path)
             st.success(f"Zlib compressed file successfully encoded into the RGB channels.")
         
         st.image(output_image_path, caption="Click the link below to download the encoded image.", use_column_width=True)
