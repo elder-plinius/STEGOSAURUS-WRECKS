@@ -29,14 +29,13 @@ def compress_image_before_encoding(image_path, output_image_path):
         img = img.resize((img.width // 2, img.height // 2))  # Reduce size by half
         img.save(output_image_path, optimize=True, format="PNG")  # Save the compressed image again
 
-def calculate_capacity(img, channels):
+def calculate_capacity(img):
     """
-    Calculate the maximum capacity of the image for embedding data.
-    Channels: RGB, RGBA, R, G, B, or A
+    Calculate the maximum capacity of the image for embedding data using RGB channels.
     """
     width, height = img.size
-    capacity_per_channel = width * height  # Each pixel in a channel can hold 1 bit
-    return capacity_per_channel * len(channels)  # Total capacity based on the number of channels used
+    capacity_per_pixel = 3  # Each pixel in RGB can hold 3 bits (R, G, B channels)
+    return width * height * capacity_per_pixel  # Total capacity based on RGB channels
 
 def compress_text(text):
     """
@@ -45,14 +44,14 @@ def compress_text(text):
     compressed_text = zlib.compress(text.encode())
     return compressed_text
 
-def encode_text_into_plane(image, text, output_path, plane="RGB"):
+def encode_text_into_rgb(image, text, output_path):
     """
-    Embed the text into a specific color plane (R, G, B, A) using all available channels.
+    Embed the text into RGB channels of the image.
     """
-    img = image.convert("RGBA")  # Ensure image has alpha channel
+    img = image.convert("RGB")  # Ensure image uses only RGB channels
     compressed_text = compress_text(text)
     binary_text = ''.join(format(byte, '08b') for byte in compressed_text) + '00000000'  # Add terminator
-    pixel_capacity = calculate_capacity(img, plane)
+    pixel_capacity = calculate_capacity(img)
 
     if len(binary_text) > pixel_capacity:
         raise ValueError(f"The message is too long for this image. Available capacity: {pixel_capacity} bits, but you need {len(binary_text)} bits.")
@@ -61,20 +60,17 @@ def encode_text_into_plane(image, text, output_path, plane="RGB"):
     for y in range(img.height):
         for x in range(img.width):
             if index < len(binary_text):
-                r, g, b, a = img.getpixel((x, y))
+                r, g, b = img.getpixel((x, y))
 
-                # Embed into selected plane(s)
-                if 'R' in plane:
-                    r = (r & 0xFE) | int(binary_text[index])  # LSB of red
-                if 'G' in plane and index + 1 < len(binary_text):
+                # Embed 1 bit in each RGB channel (3 bits per pixel)
+                r = (r & 0xFE) | int(binary_text[index])  # LSB of red
+                if index + 1 < len(binary_text):
                     g = (g & 0xFE) | int(binary_text[index + 1])  # LSB of green
-                if 'B' in plane and index + 2 < len(binary_text):
+                if index + 2 < len(binary_text):
                     b = (b & 0xFE) | int(binary_text[index + 2])  # LSB of blue
-                if 'A' in plane and index + 3 < len(binary_text):
-                    a = (a & 0xFE) | int(binary_text[index + 3])  # LSB of alpha
 
-                img.putpixel((x, y), (r, g, b, a))
-                index += len(plane)  # Move to the next set of bits based on how many planes are used
+                img.putpixel((x, y), (r, g, b))
+                index += 3  # Move to the next set of bits
 
     img.save(output_path, format="PNG")
 
@@ -125,11 +121,11 @@ def main():
         st.subheader("Text Embedding")
         if not enable_jailbreak:
             master_plan = st.text_area("Enter text to encode into the image:", "", help="Enter the text you want to hide in the image.")
-        encoding_plane = st.selectbox("Select the color plane for embedding text:", ["RGB", "R", "G", "B", "A"], help="Choose which color channels to use for embedding.")
+        encoding_plane = "RGB"  # We are only using RGB now
     else:
         st.subheader("Zlib File Embedding")
         uploaded_file_zlib = st.file_uploader("Upload a file to embed (it will be zlib compressed):", type=None, help="Upload a file that will be compressed and hidden in the image.")
-        encoding_plane = st.selectbox("Select the color plane for embedding compressed file:", ["RGB", "R", "G", "B", "A"], help="Choose which color channels to use for embedding.")
+        encoding_plane = "RGB"  # We are only using RGB now
 
     st.markdown("---")
 
@@ -146,15 +142,15 @@ def main():
         # If embedding text
         if option == "Text" and master_plan:
             image = Image.open(output_image_path)
-            encode_text_into_plane(image, master_plan, output_image_path, encoding_plane)
-            st.success(f"Text successfully encoded into the {encoding_plane} plane.")
+            encode_text_into_rgb(image, master_plan, output_image_path)
+            st.success(f"Text successfully encoded into the RGB channels.")
         
         # If embedding zlib file
         elif option == "Zlib Compressed File" and uploaded_file_zlib:
             file_data = uploaded_file_zlib.read()
             image = Image.open(output_image_path)
-            encode_zlib_into_image(image, file_data, output_image_path, encoding_plane)
-            st.success(f"Zlib compressed file successfully encoded into the {encoding_plane} plane.")
+            encode_text_into_rgb(image, file_data.decode(), output_image_path)
+            st.success(f"Zlib compressed file successfully encoded into the RGB channels.")
         
         st.image(output_image_path, caption="Click the link below to download the encoded image.", use_column_width=True)
         st.markdown(get_image_download_link(output_image_path), unsafe_allow_html=True)
